@@ -1,0 +1,32 @@
+{
+    "name": "logall-request-express",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "npm run lint && npm run jest",
+        "lint": "node_modules/.bin/eslint index.js lib/**",
+        "jest": "jest --coverage"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/tegud/node-logall-request-express.git"
+    },
+    "author": "Steve Elliott",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/tegud/node-logall-request-express/issues"
+    },
+    "homepage": "https://github.com/tegud/node-logall-request-express#readme",
+    "devDependencies": {
+        "eslint": "^4.19.1",
+        "express": "^4.16.3",
+        "jest": "^22.4.3",
+        "logall": "^2.0.2",
+        "request": "^2.85.0"
+    },
+    "dependencies": {
+        "continuation-local-storage": "^3.2.1",
+        "object-path": "^0.11.4"
+    }
+}
