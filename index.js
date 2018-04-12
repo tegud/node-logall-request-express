@@ -1,27 +1,39 @@
 const { createNamespace } = require("continuation-local-storage");
 
 const requestLogger = require("./lib/request-logger");
+const dynamicLogLevel = require("./lib/dynamic-log-level");
 
 module.exports = function(logger, config = {}) {
-    const requestLoggerContext = createNamespace("request");
+    // return {
+    //     getRequestLoggingContext: () =>
+    //         requestLoggerContext.get("logging-context"),
+    //     dynamicLogLevel: dynamicLogLevel,
+    //     requestLogger: requestLogger.bind(undefined, logger, config)
+    // };
 
-    return {
-        getRequestLoggingContext: () =>
-            requestLoggerContext.get("logging-context"),
-        dynamicLogLevel: (req, res, next) => {
-            if (!req.headers["x-log-level"]) {
-                return next();
-            }
+    const middlewares = [];
 
-            const loggingContext =
-                requestLoggerContext.get("logging-context") || {};
+    const api = {
+        dynamicLogLevel: () => {
+            middlewares.push(dynamicLogLevel);
 
-            loggingContext.logLevel = req.headers["x-log-level"];
-
-            requestLoggerContext.set("logging-context", loggingContext);
-
-            next();
+            return api;
         },
-        requestLogger: requestLogger.bind(undefined, logger, config)
+        setMiddleware: app => {
+            const requestLoggerContext = createNamespace("logging-context");
+
+            try {
+                [
+                    ...middlewares,
+                    requestLogger.bind(undefined, logger, config)
+                ].forEach(middleware =>
+                    app.use(requestLoggerContext.bind(middleware))
+                );
+            } catch (e) {
+                console.log(e.message);
+            }
+        }
     };
+
+    return api;
 };

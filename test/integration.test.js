@@ -90,8 +90,7 @@ describe("logall request middleware", () => {
             }
         });
 
-        app.use(requestLogger.requestLogger);
-        app.use(requestLogger.dynamicLogLevel);
+        requestLogger.dynamicLogLevel().setMiddleware(app);
         app.get("/example", (req, res) => res.send("OK"));
 
         Promise.all([
@@ -144,8 +143,8 @@ describe("logall request middleware", () => {
             }
         });
 
-        app.use(requestLogger.requestLogger);
-        app.use(requestLogger.dynamicLogLevel);
+        requestLogger.dynamicLogLevel().setMiddleware(app);
+
         app.get("/example", (req, res) => {
             logger.logDebug("DEBUG MESSAGE");
             res.send("OK");

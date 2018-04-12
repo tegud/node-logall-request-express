@@ -1,4 +1,4 @@
-const RequestLogger = require("../../");
+const requestLogger = require("../../lib/request-logger");
 
 const FakeLogger = require("../__mocks__/fake-logger");
 const FakeRequest = require("../__mocks__/fake-request");
@@ -8,12 +8,13 @@ describe("logall request logger", () => {
     describe("client ip", () => {
         it("sets ip to last IP in x-forwarded-for request header if present", done => {
             const fakeLogger = new FakeLogger();
-            const requestLogger = new RequestLogger(fakeLogger);
             const fakeResponse = new FakeResponse({
                 statusCode: 200
             });
 
-            requestLogger.requestLogger(
+            requestLogger(
+                fakeLogger,
+                {},
                 new FakeRequest({
                     url: "/example?test=true#fragment",
                     method: "POST",
@@ -39,12 +40,13 @@ describe("logall request logger", () => {
 
         it("sets ip to value in requestion connection remote address if no x-forwarded-for header is present", done => {
             const fakeLogger = new FakeLogger();
-            const requestLogger = new RequestLogger(fakeLogger);
             const fakeResponse = new FakeResponse({
                 statusCode: 200
             });
 
-            requestLogger.requestLogger(
+            requestLogger(
+                fakeLogger,
+                {},
                 new FakeRequest({
                     url: "/example?test=true#fragment",
                     method: "POST",
@@ -68,14 +70,15 @@ describe("logall request logger", () => {
 
         it("sets ip to value in configured request header", done => {
             const fakeLogger = new FakeLogger();
-            const requestLogger = new RequestLogger(fakeLogger, {
-                clientIpHeaders: ["x-actual-ip"]
-            });
             const fakeResponse = new FakeResponse({
                 statusCode: 200
             });
 
-            requestLogger.requestLogger(
+            requestLogger(
+                fakeLogger,
+                {
+                    clientIpHeaders: ["x-actual-ip"]
+                },
                 new FakeRequest({
                     url: "/example?test=true#fragment",
                     method: "POST",
@@ -102,14 +105,15 @@ describe("logall request logger", () => {
 
         it("sets ip to first provided value in configured request headers", done => {
             const fakeLogger = new FakeLogger();
-            const requestLogger = new RequestLogger(fakeLogger, {
-                clientIpHeaders: ["x-actual-ip", "x-backup-ip"]
-            });
             const fakeResponse = new FakeResponse({
                 statusCode: 200
             });
 
-            requestLogger.requestLogger(
+            requestLogger(
+                fakeLogger,
+                {
+                    clientIpHeaders: ["x-actual-ip", "x-backup-ip"]
+                },
                 new FakeRequest({
                     url: "/example?test=true#fragment",
                     method: "POST",

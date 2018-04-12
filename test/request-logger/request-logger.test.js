@@ -1,4 +1,4 @@
-const RequestLogger = require("../../");
+const requestLogger = require("../../lib/request-logger");
 
 const FakeLogger = require("../__mocks__/fake-logger");
 const FakeRequest = require("../__mocks__/fake-request");
@@ -8,10 +8,11 @@ describe("logall request logger", () => {
     describe("Request Handled", () => {
         test("is logged", done => {
             const fakeLogger = new FakeLogger();
-            const requestLogger = new RequestLogger(fakeLogger);
             const fakeResponse = new FakeResponse({});
 
-            requestLogger.requestLogger(
+            requestLogger(
+                fakeLogger,
+                {},
                 new FakeRequest({}),
                 fakeResponse,
                 () => {
@@ -28,10 +29,11 @@ describe("logall request logger", () => {
 
         test("logs basic request information", done => {
             const fakeLogger = new FakeLogger();
-            const requestLogger = new RequestLogger(fakeLogger);
             const fakeResponse = new FakeResponse({ statusCode: 200 });
 
-            requestLogger.requestLogger(
+            requestLogger(
+                fakeLogger,
+                {},
                 new FakeRequest({
                     url: "/example?test=true#fragment",
                     method: "POST"
@@ -65,13 +67,14 @@ describe("logall request logger", () => {
             ].forEach(optionalField =>
                 test(`logs ${optionalField.field} if provided`, done => {
                     const fakeLogger = new FakeLogger();
-                    const requestLogger = new RequestLogger(fakeLogger);
                     const fakeResponse = new FakeResponse({ statusCode: 200 });
                     const headers = {};
 
                     headers[optionalField.field] = optionalField.value;
 
-                    requestLogger.requestLogger(
+                    requestLogger(
+                        fakeLogger,
+                        {},
                         new FakeRequest({
                             url: "/example?test=true#fragment",
                             method: "POST",
@@ -104,13 +107,14 @@ describe("logall request logger", () => {
 
             test("logs location if present on response", done => {
                 const fakeLogger = new FakeLogger();
-                const requestLogger = new RequestLogger(fakeLogger);
                 const fakeResponse = new FakeResponse({
                     statusCode: 200,
                     location: "http://example.com/redirect"
                 });
 
-                requestLogger.requestLogger(
+                requestLogger(
+                    fakeLogger,
+                    {},
                     new FakeRequest({
                         url: "/example?test=true#fragment",
                         method: "POST"

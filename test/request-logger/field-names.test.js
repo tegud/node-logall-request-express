@@ -1,4 +1,4 @@
-const RequestLogger = require("../../");
+const requestLogger = require("../../lib/request-logger");
 
 const FakeLogger = require("../__mocks__/fake-logger");
 const FakeRequest = require("../__mocks__/fake-request");
@@ -8,16 +8,17 @@ describe("logall request logger", () => {
     describe("field name configuration", () => {
         test("basic request information field names can be modified", done => {
             const fakeLogger = new FakeLogger();
-            const requestLogger = new RequestLogger(fakeLogger, {
-                fieldNames: {
-                    url: "path",
-                    method: "verb",
-                    status: "response_status"
-                }
-            });
             const fakeResponse = new FakeResponse({ statusCode: 200 });
 
-            requestLogger.requestLogger(
+            requestLogger(
+                fakeLogger,
+                {
+                    fieldNames: {
+                        url: "path",
+                        method: "verb",
+                        status: "response_status"
+                    }
+                },
                 new FakeRequest({
                     url: "/example?test=true#fragment",
                     method: "POST"
@@ -39,14 +40,15 @@ describe("logall request logger", () => {
 
         test("basic request information field can be disabled", done => {
             const fakeLogger = new FakeLogger();
-            const requestLogger = new RequestLogger(fakeLogger, {
-                fieldNames: {
-                    method: false
-                }
-            });
             const fakeResponse = new FakeResponse({ statusCode: 200 });
 
-            requestLogger.requestLogger(
+            requestLogger(
+                fakeLogger,
+                {
+                    fieldNames: {
+                        method: false
+                    }
+                },
                 new FakeRequest({
                     url: "/example?test=true#fragment",
                     method: "POST"
@@ -67,17 +69,19 @@ describe("logall request logger", () => {
 
         test("optional field names can be modified", done => {
             const fakeLogger = new FakeLogger();
-            const requestLogger = new RequestLogger(fakeLogger, {
-                fieldNames: {
-                    url: "path",
-                    method: "verb",
-                    status: "response_status",
-                    client_ip: "client"
-                }
-            });
             const fakeResponse = new FakeResponse({ statusCode: 200 });
 
-            requestLogger.requestLogger(
+            requestLogger(
+                fakeLogger,
+                {
+                    fieldNames: {
+                        url: "path",
+                        method: "verb",
+                        status: "response_status",
+                        client_ip: "client"
+                    }
+                },
+
                 new FakeRequest({
                     url: "/example?test=true#fragment",
                     method: "POST",
@@ -103,17 +107,18 @@ describe("logall request logger", () => {
 
         test("optional fields can be disabled", done => {
             const fakeLogger = new FakeLogger();
-            const requestLogger = new RequestLogger(fakeLogger, {
-                fieldNames: {
-                    url: "path",
-                    method: "verb",
-                    status: "response_status",
-                    client_ip: false
-                }
-            });
             const fakeResponse = new FakeResponse({ statusCode: 200 });
 
-            requestLogger.requestLogger(
+            requestLogger(
+                fakeLogger,
+                {
+                    fieldNames: {
+                        url: "path",
+                        method: "verb",
+                        status: "response_status",
+                        client_ip: false
+                    }
+                },
                 new FakeRequest({
                     url: "/example?test=true#fragment",
                     method: "POST",
@@ -136,14 +141,57 @@ describe("logall request logger", () => {
             );
         });
 
-        test("field name standard can be switched to camel-case", done => {
+        test("field names can be set to nested setters", done => {
             const fakeLogger = new FakeLogger();
-            const requestLogger = new RequestLogger(fakeLogger, {
-                fieldNameStandard: "camelCase"
-            });
             const fakeResponse = new FakeResponse({ statusCode: 200 });
 
-            requestLogger.requestLogger(
+            requestLogger(
+                fakeLogger,
+                {
+                    fieldNames: {
+                        url: "path",
+                        method: "verb",
+                        status: "response_status",
+                        client_ip: "client.ip",
+                        user_agent: "client.agent"
+                    }
+                },
+                new FakeRequest({
+                    url: "/example?test=true#fragment",
+                    method: "POST",
+                    headers: {
+                        "x-forwarded-for": "192.168.0.1",
+                        agent: "FAKE USER AGENT 1.0"
+                    }
+                }),
+                fakeResponse,
+                () => {
+                    fakeResponse.emit("finish");
+
+                    expect(fakeLogger.getLastLogged().data).toEqual({
+                        path: "/example?test=true#fragment",
+                        verb: "POST",
+                        response_status: 200,
+                        client: {
+                            ip: "192.168.0.1",
+                            agent: "FAKE USER AGENT 1.0"
+                        }
+                    });
+
+                    done();
+                }
+            );
+        });
+
+        test("field name standard can be switched to camel-case", done => {
+            const fakeLogger = new FakeLogger();
+            const fakeResponse = new FakeResponse({ statusCode: 200 });
+
+            requestLogger(
+                fakeLogger,
+                {
+                    fieldNameStandard: "camelCase"
+                },
                 new FakeRequest({
                     url: "/example?test=true#fragment",
                     method: "POST",
