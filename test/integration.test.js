@@ -4,6 +4,7 @@ const request = require("request");
 const moment = require("moment");
 const logger = require("logall");
 const RequestLogger = require("../");
+const RequestContext = require("../request-context");
 
 function UdpServer(port) {
     const server = dgram.createSocket("udp4");
@@ -90,7 +91,7 @@ describe("logall request middleware", () => {
             }
         });
 
-        requestLogger.dynamicLogLevel().setMiddleware(app);
+        requestLogger.setMiddleware(app);
         app.get("/example", (req, res) => res.send("OK"));
 
         Promise.all([
@@ -125,15 +126,7 @@ describe("logall request middleware", () => {
 
         logger.removeAll();
         logger.registerLogger({
-            level: () => {
-                const context = requestLogger.getRequestLoggingContext();
-
-                if (!context || !context.logLevel) {
-                    return "INFO";
-                }
-
-                return context.logLevel;
-            },
+            level: () => RequestContext.getValue("logLevel") || "info",
             type: "logstash",
             eventType: "my-api",
             output: {
@@ -173,6 +166,55 @@ describe("logall request middleware", () => {
                 type: "my-api",
                 level: "DEBUG",
                 message: "DEBUG MESSAGE"
+            });
+            done();
+        });
+    });
+
+    test("RequestID is logged", done => {
+        const app = express();
+        const requestLogger = new RequestLogger(logger);
+        const httpPort = 3000;
+        const udpPort = 3001;
+
+        moment.__setDate("2018-04-08T21:21:39+01:00");
+
+        logger.removeAll();
+        logger.registerLogger({
+            level: "INFO",
+            type: "logstash",
+            eventType: "my-api",
+            output: {
+                transport: "udp",
+                host: "127.0.0.1",
+                port: 3001
+            }
+        });
+
+        requestLogger.requestId().setMiddleware(app);
+        app.get("/example", (req, res) => res.send("OK"));
+
+        Promise.all([
+            startServer(app, httpPort),
+            startUdpListener(udpPort)
+        ]).then(() =>
+            makeRequest({
+                url: `http://localhost:${httpPort}/example`,
+                headers: { "x-request-id": "12345" }
+            })
+        );
+
+        udpListener.on("message", message => {
+            expect(JSON.parse(message.toString("utf-8"))).toEqual({
+                "@timestamp": "2018-04-08T21:21:39+01:00",
+                client_ip: "::ffff:127.0.0.1",
+                level: "INFO",
+                message: "Request Handled",
+                method: "GET",
+                status: 200,
+                request_id: "12345",
+                type: "my-api",
+                url: "/example"
             });
             done();
         });

@@ -1,26 +1,40 @@
-const { getNamespace, createNamespace } = require("continuation-local-storage");
+const { getNamespace, createNamespace } = require("cls-hooked");
+
+function newNamespace() {
+    return createNamespace("request");
+}
+
+function namespace() {
+    return getNamespace("request");
+}
+
+function getLoggingContext() {
+    const context = namespace().get("logging-context");
+
+    if (context) {
+        return context;
+    }
+
+    return { data: {} };
+}
 
 module.exports = {
-    context: () => getNamespace("request") || createNamespace("request"),
-    get: () => {
-        const requestLoggerContext = getNamespace("request");
+    context: () => namespace() || newNamespace(),
+    get: () => getLoggingContext(),
+    getValue: key => getLoggingContext()[key],
+    setValue: (key, value) => {
+        const requestLoggerContext = namespace();
 
-        const loggingContext = requestLoggerContext.get("logging-context") || {
-            data: {}
-        };
+        const loggingContext = getLoggingContext();
 
-        if (!loggingContext.data) {
-            loggingContext.data = {};
-        }
+        loggingContext[key] = value;
 
-        return loggingContext;
+        requestLoggerContext.set("logging-context", loggingContext);
     },
     set: (key, value) => {
-        const requestLoggerContext = getNamespace("request");
+        const requestLoggerContext = namespace();
 
-        const loggingContext = requestLoggerContext.get("logging-context") || {
-            data: {}
-        };
+        const loggingContext = getLoggingContext();
 
         loggingContext.data[key] = value;
 

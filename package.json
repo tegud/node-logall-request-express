@@ -26,6 +26,7 @@
         "request": "^2.85.0"
     },
     "dependencies": {
+        "cls-hooked": "^4.2.2",
         "continuation-local-storage": "^3.2.1",
         "object-path": "^0.11.4"
     }

@@ -65,5 +65,33 @@ describe("logall request logger", () => {
                 }
             );
         });
+
+        test("context data field names with camel case are converted to snake case", done => {
+            const fakeLogger = new FakeLogger();
+            const fakeResponse = new FakeResponse({ statusCode: 200 });
+
+            requestLogger(
+                fakeLogger,
+                {},
+                new FakeRequest({
+                    url: "/example?test=true#fragment",
+                    method: "POST"
+                }),
+                fakeResponse,
+                () => {
+                    require("../../request-context").set("variableName", 12345);
+                    fakeResponse.emit("finish");
+
+                    expect(fakeLogger.getLastLogged().data).toEqual({
+                        url: "/example?test=true#fragment",
+                        method: "POST",
+                        status: 200,
+                        variable_name: 12345
+                    });
+
+                    done();
+                }
+            );
+        });
     });
 });
